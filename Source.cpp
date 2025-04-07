@@ -16,7 +16,7 @@ struct FileData {
 Structure of config file:
 0	#mode:
 10000	#size
-0	#algorithm: 0-heapsort, 1-insertion sort, 2-quicksort
+0	#algorithm: 0-heapsort, 1-insertion sort, 2-quicksort, 3-binary insert sort
 33	#amount: sorted in %
 0	#data type: 0-int, 1-float
 */
@@ -30,11 +30,16 @@ FileData loadFileData() {
 	// TODO: Parsing file data
 	if (!fileStream.is_open()) {
 		std::cerr << "Error opening file: " << filePath << std::endl;
+		fileData.mode = -1; //Indicate an error
+		fileData.size = -1;
+		fileData.algorithm = -1;
+		fileData.amountSorted = -1;
+		fileData.datatype = -1;
+		fileStream.close();
 		return fileData;
 	}
     std::string line;
     int lineIndex = 0;
-
     while (std::getline(fileStream, line)) {
         if (line.empty() || line[0] == '#') {
             continue;
@@ -68,46 +73,60 @@ FileData loadFileData() {
 	return fileData;
 }
 void performTest(FileData fileData) {
-	Generator<int> generator;
-	Sorter<int> sorter;
-	int* A = nullptr;
 	if (fileData.datatype == 0) {
+		Sorter<int> sorter;
+		Generator<int> generator;
+		int* A = nullptr;
 		A = generator.generateRandomIntegerArray(fileData.size, fileData.amountSorted);
+		generator.printArray(A, fileData.size);
+		switch (fileData.algorithm) {
+		case 0:
+			std::cout << "Heapsort:" << std::endl;
+			sorter.heapSort(A, fileData.size);
+			generator.printArray(A, fileData.size);
+			break;
+		case 1:
+			std::cout << "Insertionsort:" << std::endl;
+			sorter.insertSort(A, fileData.size);
+			generator.printArray(A, fileData.size);
+			break;
+		case 2:
+			std::cout << "Quicksort:" << std::endl;
+			sorter.quickSort(A, 0, fileData.size-1);
+			generator.printArray(A, fileData.size);
+			break;
+		case 3:
+			std::cout << "Binary Insertionsort:" << std::endl;
+			sorter.binaryInsertSort(A, fileData.size);
+			generator.printArray(A, fileData.size);
+			break;
+		default:
+			std::cerr << "Invalid algorithm" << std::endl;
+			break;
+		}
 	}
 	else if (fileData.datatype == 1) {
+		Generator<float> generator;
+		Sorter<float> sorter;
+		float* A = nullptr;
 		A = generator.generateRandomFloatArray(fileData.size, fileData.amountSorted);
+		generator.printArray(A, fileData.size);
+		std::cout << "Quicksort:" << std::endl;
+		sorter.quickSort(A, 0, fileData.size - 1);
 	}
 	else {
 		std::cerr << "Invalid data type" << std::endl;
 		return;
 	}
-	if (fileData.datatype == 0) {
-        switch (fileData.algorithm) {
-        case 0:
-            std::cout << "Heapsort:" << std::endl;
-            sorter.heapSort(A);
-            break;
-		case 1:
-			std::cout << "Insertionsort:" << std::endl;
-			sorter.insertSort(A);
-			break;
-		case 2:
-			std::cout << "Quicksort:" << std::endl;
-			sorter.quickSort(A);
-			break;
-        }
-		
-	}
-    else if (fileData.datatype == 1){
-		std::cout << "Heapsort:" << std::endl;
-		sorter.heapSort(A);
-    }
 }
-void testMode() {
-    
+double* performSimulation(FileData fileData) {
+	
 }
 int main() {
 	FileData fileData = loadFileData();
-    performTest(fileData);
+    if (fileData.mode == 0) performTest(fileData);
+	else if (fileData.mode == 1) {
+		double* 
+	}
 	return 0;
 }

@@ -47,5 +47,11 @@ public:
         }
         return A;
     }
+	void printArray(T* A, int size) {
+		for (int i = 0; i < size; ++i) {
+			std::cout << A[i] << " ";
+		}
+		std::cout << std::endl;
+	}
 };
 #endif // GENERATOR_H
