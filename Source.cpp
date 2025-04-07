@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
+#include "Algorithms.h"
+#include "Generator.h"
 struct FileData {
 	int mode;
 	int size;
@@ -65,12 +67,47 @@ FileData loadFileData() {
     fileStream.close();
 	return fileData;
 }
-double performSort(FileData fileData) {
-    double time;
-    return time;
+void performTest(FileData fileData) {
+	Generator<int> generator;
+	Sorter<int> sorter;
+	int* A = nullptr;
+	if (fileData.datatype == 0) {
+		A = generator.generateRandomIntegerArray(fileData.size, fileData.amountSorted);
+	}
+	else if (fileData.datatype == 1) {
+		A = generator.generateRandomFloatArray(fileData.size, fileData.amountSorted);
+	}
+	else {
+		std::cerr << "Invalid data type" << std::endl;
+		return;
+	}
+	if (fileData.datatype == 0) {
+        switch (fileData.algorithm) {
+        case 0:
+            std::cout << "Heapsort:" << std::endl;
+            sorter.heapSort(A);
+            break;
+		case 1:
+			std::cout << "Insertionsort:" << std::endl;
+			sorter.insertSort(A);
+			break;
+		case 2:
+			std::cout << "Quicksort:" << std::endl;
+			sorter.quickSort(A);
+			break;
+        }
+		
+	}
+    else if (fileData.datatype == 1){
+		std::cout << "Heapsort:" << std::endl;
+		sorter.heapSort(A);
+    }
+}
+void testMode() {
+    
 }
 int main() {
 	FileData fileData = loadFileData();
-    performSort(fileData);
+    performTest(fileData);
 	return 0;
 }
