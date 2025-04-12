@@ -3,15 +3,58 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
+#include <ctime>
+#include <algorithm>
 #include "Algorithms.h"
 #include "Generator.h"
+int algorithmAmount = 4;
 struct FileData {
 	int mode;
 	int size;
 	int algorithm;
 	int amountSorted;
-	int datatype;
+	int dataType;
+	int instanceAmount;
 };
+struct resultsInfo {
+	double avgTime;
+	double minTime;
+	double maxTime;
+	double medianTime;
+	double stdDevTime;
+	double instanceTime[];
+};
+resultsInfo resultCalculator(double* instanceTime, int size) {
+	resultsInfo result;
+	result.avgTime = 0.0;
+	result.minTime = instanceTime[0];
+	result.maxTime = instanceTime[0];
+	for (int i = 0; i < size; i++) {
+		result.avgTime += instanceTime[i];
+		if (instanceTime[i] < result.minTime) {
+			result.minTime = instanceTime[i];
+		}
+		if (instanceTime[i] > result.maxTime) {
+			result.maxTime = instanceTime[i];
+		}
+	}
+	// Calculate median
+	std::sort(instanceTime, instanceTime + size);
+	if (size % 2 == 0) {
+		result.medianTime = (instanceTime[size / 2 - 1] + instanceTime[size / 2]) / 2;
+	}
+	else {
+		result.medianTime = instanceTime[size / 2];
+	}
+	// Calculate standard deviation
+	double sum = 0.0;
+	for (int i = 0; i < size; i++) {
+		sum += (instanceTime[i] - result.avgTime) * (instanceTime[i] - result.avgTime);
+	}
+	result.stdDevTime = sqrt(sum / size);
+	result.avgTime /= size;
+	return result;
+}
 /*
 Structure of config file:
 0	#mode:
@@ -19,6 +62,7 @@ Structure of config file:
 0	#algorithm: 0-heapsort, 1-insertion sort, 2-quicksort, 3-binary insert sort
 33	#amount: sorted in %
 0	#data type: 0-int, 1-float
+100 #instance amount
 */
 FileData loadFileData() {
 	FileData fileData;
@@ -34,7 +78,7 @@ FileData loadFileData() {
 		fileData.size = -1;
 		fileData.algorithm = -1;
 		fileData.amountSorted = -1;
-		fileData.datatype = -1;
+		fileData.dataType = -1;
 		fileStream.close();
 		return fileData;
 	}
@@ -61,8 +105,10 @@ FileData loadFileData() {
                 fileData.amountSorted = value;
                 break;
             case 4:
-                fileData.datatype = value;
+                fileData.dataType = value;
                 break;
+			case 5:
+				fileData.instanceAmount = value;
             default:
                 break;
             }
@@ -73,7 +119,7 @@ FileData loadFileData() {
 	return fileData;
 }
 void performTest(FileData fileData) {
-	if (fileData.datatype == 0) {
+	if (fileData.dataType == 0) {
 		Sorter<int> sorter;
 		Generator<int> generator;
 		int* A = nullptr;
@@ -105,7 +151,7 @@ void performTest(FileData fileData) {
 			break;
 		}
 	}
-	else if (fileData.datatype == 1) {
+	else if (fileData.dataType == 1) {
 		Generator<float> generator;
 		Sorter<float> sorter;
 		float* A = nullptr;
@@ -119,14 +165,51 @@ void performTest(FileData fileData) {
 		return;
 	}
 }
+//TODO: finish this
 double* performSimulation(FileData fileData) {
-	
+	Generator<int> generator;
+	Sorter<int> sorter;
+	int* A = nullptr;
+
+	// generate a 3d array with arrays to test for each algorithm
+	double*** testingArray = new double** [algorithmAmount]; //1d
+	for (int i = 0; i < algorithmAmount; ++i) {
+		testingArray[i] = new double* [fileData.instanceAmount]; //2d
+		for (int j = 0; j < fileData.instanceAmount; ++j) {
+			testingArray[i][j] = new double[fileData.size]; //3d
+		}
+	}
+	// fill the first dimension with generated arrays according to fileData, then copy the arrays to other columns
+	for (int i = 0; i < fileData.instanceAmount; ++i) {
+		A = generator.generateRandomIntegerArray(fileData.size, fileData.amountSorted);
+		for (int j = 0; j < algorithmAmount; ++j) {
+			for (int k = 0; k < fileData.size; ++k) {
+				testingArray[j][i][k] = A[k];
+			}
+		}
+	}
+	// sort each array with the corresponding algorithm, measure each array sort time time in the instanceTime array
+	for (int i = 0; i < fileData.instanceAmount; ++i) {
+		switch (fileData.algorithm) {
+		case 0:
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		default:
+			break;
+		}
+	}
+
 }
 int main() {
 	FileData fileData = loadFileData();
     if (fileData.mode == 0) performTest(fileData);
 	else if (fileData.mode == 1) {
-		double* 
+		performSimulation(fileData);
 	}
 	return 0;
 }
