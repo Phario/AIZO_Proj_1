@@ -14,7 +14,7 @@ public:
         int* A = new int[size];
         for (int i = 0; i < size; ++i) {
             if (i < sortedAmount) {
-                A[i] = INT_MIN + 1;
+                A[i] = 0;
             }
             else {
                 A[i] = rand();

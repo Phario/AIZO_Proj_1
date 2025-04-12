@@ -1,4 +1,4 @@
-#include <string>
+﻿#include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "Algorithms.h"
 #include "Generator.h"
+#include "progressbar.hpp"
 int algorithmAmount = 4;
 struct FileData {
 	int mode;
@@ -169,7 +170,6 @@ void performTest(FileData fileData) {
 		return;
 	}
 }
-//TODO: finish this
 double* performSimulation(FileData fileData) {
 	Generator<int> generator;
 	Sorter<int> sorter;
@@ -200,6 +200,11 @@ double* performSimulation(FileData fileData) {
 	insertionSortResults.instanceTime.resize(fileData.instanceAmount);
 	quickSortResults.instanceTime.resize(fileData.instanceAmount);
 	binaryInsertionSortResults.instanceTime.resize(fileData.instanceAmount);
+	// initialize the progress bar
+	progressbar bar(algorithmAmount * fileData.instanceAmount);
+	bar.set_todo_char(" ");
+	bar.set_done_char("#");
+	// sort each array
 	for (int j = 0; j < algorithmAmount; j++) {
 		for (int i = 0; i < fileData.instanceAmount; ++i) {
 			switch (j) {
@@ -238,7 +243,9 @@ double* performSimulation(FileData fileData) {
 			default:
 				break;
 			}
+			bar.update();
 		}
+		
 	}
 	// calculate results for each algorithm
 	quickSortResults = resultCalculator(quickSortResults.instanceTime);
@@ -246,6 +253,10 @@ double* performSimulation(FileData fileData) {
 	heapSortResults = resultCalculator(heapSortResults.instanceTime);
 	binaryInsertionSortResults = resultCalculator(binaryInsertionSortResults.instanceTime);
 	// print out the data
+	std::cout << "Array size: " << fileData.size << std::endl;
+	std::cout << "Array amount: " << fileData.instanceAmount << std::endl;
+	std::cout << "Amount sorted: " << fileData.amountSorted << "%" << std::endl;
+	std::cout << "Memory allocated: " << fileData.instanceAmount * fileData.size * sizeof(int)*4 << " bytes" << std::endl;
 	std::cout << "Algorithm: Heapsort" << std::endl;
 	std::cout << "Average time: " << heapSortResults.avgTime << std::endl;
 	std::cout << "Minimum time: " << heapSortResults.minTime << std::endl;

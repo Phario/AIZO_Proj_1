@@ -1,13 +1,24 @@
 #pragma once
 #ifndef ALGORITHMS_H
 #define ALGORITHMS_H
+#include <stack>
 template <typename T> class Sorter {
 public:
     void quickSort(T* A, int low, int high) {
-        if (low < high) {
-            int pivotIndex = partition(A, low, high);
-            quickSort(A, low, pivotIndex - 1);
-            quickSort(A, pivotIndex + 1, high);
+        std::stack<std::pair<int, int>> stack;
+        stack.push({ low, high });
+
+        while (!stack.empty()) {
+            std::pair<int, int> current = stack.top();
+            stack.pop();
+            int current_low = current.first;
+            int current_high = current.second;
+
+            if (current_low < current_high) {
+                int pivotIndex = partition(A, current_low, current_high);
+                stack.push({ current_low, pivotIndex - 1 });
+                stack.push({ pivotIndex + 1, current_high });
+            }
         }
     }
 

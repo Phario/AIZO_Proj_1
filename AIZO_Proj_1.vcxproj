@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Algorithms.h" />
     <ClInclude Include="Generator.h" />
+    <ClInclude Include="progressbar.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp" />
