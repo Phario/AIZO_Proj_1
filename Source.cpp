@@ -10,15 +10,27 @@
 #include "Algorithms.h"
 #include "Generator.h"
 #include "progressbar.hpp"
-int algorithmAmount = 4;
-struct FileData {
+/*
+Structure of config file:
+0		#mode:
+10000	#size
+0		#algorithm: 0-heapsort, 1-insertion sort, 2-quicksort, 3-binary insert sort
+33		#amount: sorted in %
+0		#data type: 0-int, 1-float
+100		#instance amount
+0		#direction: 0-random, 1-ascending, 2-descending
+*/
+// FileData structure to hold the configuration data
+struct fileData {
 	int mode;
 	int size;
 	int algorithm;
 	int amountSorted;
 	int dataType;
 	int instanceAmount;
+	int direction;
 };
+// resultsInfo structure to hold the results of the sorting algorithms
 struct resultsInfo {
 	double avgTime;
 	double minTime;
@@ -27,8 +39,12 @@ struct resultsInfo {
 	double stdDevTime;
 	std::vector<double> instanceTime;
 };
+// amount of algorithms
+int algorithmAmount = 4;
+// calculates the results of the sorting algorithms
 resultsInfo resultCalculator(const std::vector<double>& inputTimes) {
 	resultsInfo result;
+	// check if the input vector is empty
 	if (inputTimes.empty()) {
 		throw std::invalid_argument("Input vector is empty.");
 	}
@@ -37,6 +53,7 @@ resultsInfo resultCalculator(const std::vector<double>& inputTimes) {
 	double sum = 0.0;
 	result.minTime = inputTimes[0];
 	result.maxTime = inputTimes[0];
+	// Calculate average, min, and max
 	for (double time : inputTimes) {
 		sum += time;
 		if (time < result.minTime) result.minTime = time;
@@ -60,33 +77,28 @@ resultsInfo resultCalculator(const std::vector<double>& inputTimes) {
 	result.stdDevTime = std::sqrt(varianceSum / size);
 	return result;
 }
-/*
-Structure of config file:
-0	#mode:
-10000	#size
-0	#algorithm: 0-heapsort, 1-insertion sort, 2-quicksort, 3-binary insert sort
-33	#amount: sorted in %
-0	#data type: 0-int, 1-float
-100 #instance amount
-*/
-FileData loadFileData() {
-	FileData fileData;
+// Loads data from file
+fileData loadFileData() {
+	// initialize file data and file stream
+	fileData fileData;
 	std::string filePath;
 	std::fstream fileStream;
 	std::cout << "Enter the path to the config file: ";
 	std::cin >> filePath;
 	fileStream.open(filePath);
-	// TODO: Parsing file data
 	if (!fileStream.is_open()) {
 		std::cerr << "Error opening file: " << filePath << std::endl;
-		fileData.mode = -1; //Indicate an error
+		fileData.mode = -1; // Indicate an error
 		fileData.size = -1;
 		fileData.algorithm = -1;
 		fileData.amountSorted = -1;
 		fileData.dataType = -1;
+		fileData.instanceAmount = -1;
+		fileData.direction = -1;
 		fileStream.close();
 		return fileData;
 	}
+	// Read the file line by line and parse it
     std::string line;
     int lineIndex = 0;
     while (std::getline(fileStream, line)) {
@@ -114,6 +126,10 @@ FileData loadFileData() {
                 break;
 			case 5:
 				fileData.instanceAmount = value;
+				break;
+			case 6:
+				fileData.direction = value;
+				break;
             default:
                 break;
             }
@@ -123,13 +139,31 @@ FileData loadFileData() {
     fileStream.close();
 	return fileData;
 }
-void performTest(FileData fileData) {
+// performs the test according to the mode and data type
+void performTest(fileData fileData) {
+	// check if the fileData is valid
 	if (fileData.dataType == 0) {
+		// initialize tools
 		Sorter<int> sorter;
 		Generator<int> generator;
 		int* A = nullptr;
-		A = generator.generateRandomIntegerArray(fileData.size, fileData.amountSorted);
+		// generate a random array according to fileData
+		if (fileData.direction == 0) {
+			A = generator.generateRandomIntegerArray(fileData.size, fileData.amountSorted);
+		}
+		else if (fileData.direction == 1) {
+			A = generator.generateAscDescTArray(fileData.size, true);
+		}
+		else if (fileData.direction == 2) {
+			A = generator.generateAscDescTArray(fileData.size, false);
+		}
+		else {
+			std::cerr << "Invalid direction" << std::endl;
+			return;
+		}
+		// print the original array
 		generator.printArray(A, fileData.size);
+		// sort the array according to the algorithm and print the sorted array
 		switch (fileData.algorithm) {
 		case 0:
 			std::cout << "Heapsort:" << std::endl;
@@ -156,6 +190,7 @@ void performTest(FileData fileData) {
 			break;
 		}
 	}
+	// if the data type is float
 	else if (fileData.dataType == 1) {
 		Generator<float> generator;
 		Sorter<float> sorter;
@@ -164,13 +199,17 @@ void performTest(FileData fileData) {
 		generator.printArray(A, fileData.size);
 		std::cout << "Quicksort:" << std::endl;
 		sorter.quickSort(A, 0, fileData.size - 1);
+		generator.printArray(A, fileData.size);
 	}
+	// if the data type is invalid
 	else {
 		std::cerr << "Invalid data type" << std::endl;
 		return;
 	}
 }
-double* performSimulation(FileData fileData) {
+// performs the simulation according to the mode and data type
+resultsInfo* performSimulation(fileData fileData) {
+	// initialize tools
 	Generator<int> generator;
 	Sorter<int> sorter;
 	int* A = nullptr;
@@ -186,9 +225,22 @@ double* performSimulation(FileData fileData) {
 			testingArray[i][j] = new int[fileData.size]; //3d
 		}
 	}
-	// fill the first dimension with generated arrays according to fileData, then copy the arrays to other columns
+	// fill the first dimension with generated arrays according to fileData
 	for (int i = 0; i < fileData.instanceAmount; ++i) {
-		A = generator.generateRandomIntegerArray(fileData.size, fileData.amountSorted);
+		if (fileData.direction == 0) { 
+			A = generator.generateRandomIntegerArray(fileData.size, fileData.amountSorted); 
+		}
+		else if (fileData.direction == 1) {
+			A = generator.generateAscDescTArray(fileData.size, true);
+		}
+		else if (fileData.direction == 2) {
+			A = generator.generateAscDescTArray(fileData.size, false);
+		}
+		else {
+			std::cerr << "Invalid direction" << std::endl;
+			return nullptr;
+		}
+		// copy arrays to other columns
 		for (int j = 0; j < algorithmAmount; ++j) {
 			for (int k = 0; k < fileData.size; ++k) {
 				testingArray[j][i][k] = A[k];
@@ -208,6 +260,7 @@ double* performSimulation(FileData fileData) {
 	for (int j = 0; j < algorithmAmount; j++) {
 		for (int i = 0; i < fileData.instanceAmount; ++i) {
 			switch (j) {
+			// start clocks, perform sort, save results to results struct, rinse and repeat
 			case 0: {
 				auto t1 = std::chrono::high_resolution_clock::now();
 				sorter.heapSort(testingArray[j][i], fileData.size);
@@ -243,6 +296,7 @@ double* performSimulation(FileData fileData) {
 			default:
 				break;
 			}
+			// update the progress bar
 			bar.update();
 		}
 		
@@ -284,18 +338,60 @@ double* performSimulation(FileData fileData) {
 	// free the memory
 	for (int i = 0; i < algorithmAmount; ++i) {
 		for (int j = 0; j < fileData.instanceAmount; ++j) {
-			delete[] testingArray[i][j]; // Free innermost array
+			delete[] testingArray[i][j];
 		}
-		delete[] testingArray[i]; // Free second dimension
+		delete[] testingArray[i];
 	}
 	delete[] testingArray;
-	return nullptr;
+	// save results to array of results for easier processing
+	resultsInfo* resultsInfoArray = new resultsInfo[algorithmAmount];
+	resultsInfoArray[0] = heapSortResults;
+	resultsInfoArray[1] = insertionSortResults;
+	resultsInfoArray[2] = quickSortResults;
+	resultsInfoArray[3] = binaryInsertionSortResults;
+	// free the memory for the original arrays
+	return resultsInfoArray;
 }
+// saves data to csv files
+void saveDataToCSV(const std::string& filename, const resultsInfo& result) {
+	// ask the user for the file path
+	std::cout << "Enter the path to save the CSV file: ";
+	std::string filePath;
+	std::cin >> filePath;
+	std::ofstream file(filePath + filename);
+	// check if the file is open
+	if (file.is_open()) {
+		// write the data to the file
+		file << "Instance no.;Time\n";
+		for (size_t i = 0; i < result.instanceTime.size(); ++i) {
+			file << i + 1 << ";" << result.instanceTime[i] << "\n";
+		}
+		file << "Average Time:;" << result.avgTime << "\n";
+		file << "Minimum Time:;" << result.minTime << "\n";
+		file << "Maximum Time:;" << result.maxTime << "\n";
+		file << "Median Time:;" << result.medianTime << "\n";
+		file << "Standard Deviation:;" << result.stdDevTime << "\n";
+		file.close();
+		std::cout << "Data saved to " << filePath + filename << std::endl;
+	}
+	else {
+		// if the file is not open, print an error message
+		std::cerr << "Error opening file for writing: " << filePath + filename << std::endl;
+	}
+}
+// main program
 int main() {
-	FileData fileData = loadFileData();
+	// load data from file and perform tests according to mode
+	fileData fileData = loadFileData();
+	resultsInfo* resultsInfoArray = nullptr;
     if (fileData.mode == 0) performTest(fileData);
 	else if (fileData.mode == 1) {
-		performSimulation(fileData);
+		resultsInfoArray = performSimulation(fileData);
+		// save results to csv files
+		saveDataToCSV("heapSortResults.csv", resultsInfoArray[0]);
+		saveDataToCSV("insertionSortResults.csv", resultsInfoArray[1]);
+		saveDataToCSV("quickSortResults.csv", resultsInfoArray[2]);
+		saveDataToCSV("binaryInsertionSortResults.csv", resultsInfoArray[3]);
 	}
 	else {
 		std::cerr << "Invalid mode" << std::endl;
