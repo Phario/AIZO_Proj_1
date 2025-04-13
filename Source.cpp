@@ -352,6 +352,78 @@ resultsInfo* performSimulation(fileData fileData) {
 	// free the memory for the original arrays
 	return resultsInfoArray;
 }
+// performs the simulation for float data type with quicksort
+resultsInfo performFloatSimulation(fileData fileData) {
+	// initialize tools
+	Generator<float> generator;
+	Sorter<float> sorter;
+	float* A = nullptr;
+	resultsInfo quickSortResults;
+	// generate a 3d array with arrays to test for each algorithm
+	float*** testingArray = new float** [algorithmAmount]; //1d
+	for (int i = 0; i < algorithmAmount; ++i) {
+		testingArray[i] = new float* [fileData.instanceAmount]; //2d
+		for (int j = 0; j < fileData.instanceAmount; ++j) {
+			testingArray[i][j] = new float[fileData.size]; //3d
+		}
+	}
+	// fill the first dimension with generated arrays according to fileData
+	for (int i = 0; i < fileData.instanceAmount; ++i) {
+		if (fileData.direction == 0) {
+			A = generator.generateRandomFloatArray(fileData.size, fileData.amountSorted);
+		}
+		else if (fileData.direction == 1) {
+			A = generator.generateAscDescTArray(fileData.size, true);
+		}
+		else if (fileData.direction == 2) {
+			A = generator.generateAscDescTArray(fileData.size, false);
+		}
+		else {
+			std::cerr << "Invalid direction" << std::endl;
+			return quickSortResults;
+		}
+		for (int j = 0; j < algorithmAmount; ++j) {
+			for (int k = 0; k < fileData.size; ++k) {
+				testingArray[j][i][k] = A[k];
+			}
+		}
+	}
+	progressbar bar(fileData.instanceAmount);
+	bar.set_todo_char(" ");
+	bar.set_done_char("#");
+	// sort each array with quicksort, measure array sort time time in the instanceTime array
+	quickSortResults.instanceTime.resize(fileData.instanceAmount);
+	for (int i = 0; i < fileData.instanceAmount; ++i) {
+		auto t1 = std::chrono::high_resolution_clock::now();
+		sorter.quickSort(testingArray[0][i], 0, fileData.size - 1);
+		auto t2 = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> elapsedTime = t2 - t1;
+		quickSortResults.instanceTime[i] = elapsedTime.count();
+		bar.update();
+	}
+	// calculate results for quicksort
+	quickSortResults = resultCalculator(quickSortResults.instanceTime);
+	// print out the data
+	std::cout << "Array size: " << fileData.size << std::endl;
+	std::cout << "Array amount: " << fileData.instanceAmount << std::endl;
+	std::cout << "Amount sorted: " << fileData.amountSorted << "%" << std::endl;
+	std::cout << "Memory allocated: " << fileData.instanceAmount * fileData.size * sizeof(float) << " bytes" << std::endl;
+	std::cout << "Algorithm: Quicksort" << std::endl;
+	std::cout << "Average time: " << quickSortResults.avgTime << std::endl;
+	std::cout << "Minimum time: " << quickSortResults.minTime << std::endl;
+	std::cout << "Maximum time: " << quickSortResults.maxTime << std::endl;
+	std::cout << "Median time: " << quickSortResults.medianTime << std::endl;
+	std::cout << "Standard deviation: " << quickSortResults.stdDevTime << std::endl;
+	// free the memory
+	for (int i = 0; i < algorithmAmount; ++i) {
+		for (int j = 0; j < fileData.instanceAmount; ++j) {
+			delete[] testingArray[i][j];
+		}
+		delete[] testingArray[i];
+	}
+	delete[] testingArray;
+	return quickSortResults;
+}
 // saves data to csv files
 void saveDataToCSV(const std::string& filename, const resultsInfo& result) {
 	// ask the user for the file path
@@ -385,13 +457,17 @@ int main() {
 	fileData fileData = loadFileData();
 	resultsInfo* resultsInfoArray = nullptr;
     if (fileData.mode == 0) performTest(fileData);
-	else if (fileData.mode == 1) {
+	else if (fileData.mode == 1 && fileData.dataType == 0) {
 		resultsInfoArray = performSimulation(fileData);
 		// save results to csv files
 		saveDataToCSV("heapSortResults.csv", resultsInfoArray[0]);
 		saveDataToCSV("insertionSortResults.csv", resultsInfoArray[1]);
 		saveDataToCSV("quickSortResults.csv", resultsInfoArray[2]);
 		saveDataToCSV("binaryInsertionSortResults.csv", resultsInfoArray[3]);
+	}
+	else if (fileData.mode == 1 && fileData.dataType == 1) {
+		resultsInfo floatResults = performFloatSimulation(fileData);
+		saveDataToCSV("floatResults.csv", floatResults);
 	}
 	else {
 		std::cerr << "Invalid mode" << std::endl;
